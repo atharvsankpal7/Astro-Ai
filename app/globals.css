@@ -1,0 +1,129 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 280 30% 96%;
+  --foreground: 280 10% 20%;
+  
+  --card: 280 30% 98%;
+  --card-foreground: 280 10% 20%;
+  
+  --popover: 280 30% 98%;
+  --popover-foreground: 280 10% 20%;
+  
+  --primary: 280 40% 50%;
+  --primary-foreground: 280 10% 98%;
+  
+  --secondary: 250 30% 94%;
+  --secondary-foreground: 250 10% 20%;
+  
+  --muted: 280 20% 94%;
+  --muted-foreground: 280 10% 45%;
+  
+  --accent: 310 30% 94%;
+  --accent-foreground: 310 10% 20%;
+  
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+
+  --border: 280 20% 90%;
+  --input: 280 20% 90%;
+  --ring: 280 40% 50%;
+
+  --radius: 0.75rem;
+}
+
+.dark {
+  --background: 280 20% 10%;
+  --foreground: 280 10% 98%;
+  
+  --card: 280 20% 12%;
+  --card-foreground: 280 10% 98%;
+  
+  --popover: 280 20% 12%;
+  --popover-foreground: 280 10% 98%;
+  
+  --primary: 280 40% 50%;
+  --primary-foreground: 280 10% 98%;
+  
+  --secondary: 250 30% 16%;
+  --secondary-foreground: 250 10% 98%;
+  
+  --muted: 280 20% 16%;
+  --muted-foreground: 280 10% 65%;
+  
+  --accent: 310 30% 16%;
+  --accent-foreground: 310 10% 98%;
+  
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+
+  --border: 280 20% 24%;
+  --input: 280 20% 24%;
+  --ring: 280 40% 50%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Custom scrollbar styles */
+.scrollbar-custom::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-custom::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-custom::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 3px;
+}
+
+.scrollbar-custom::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--muted-foreground) / 0.5);
+}
+
+.suggestion-card {
+  animation: float 6s ease-in-out infinite;
+  transition: all 0.3s ease;
+}
+
+.suggestion-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.message-appear {
+  animation: messageAppear 0.3s ease-out forwards;
+}
+
+@keyframes messageAppear {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
