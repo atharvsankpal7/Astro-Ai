@@ -3,9 +3,18 @@ import { getLocationCoordinates } from "./geoapify";
 
 // Zodiac signs mapping
 const ZODIAC_SIGNS = [
-  "Aries", "Taurus", "Gemini", "Cancer",
-  "Leo", "Virgo", "Libra", "Scorpio",
-  "Sagittarius", "Capricorn", "Aquarius", "Pisces"
+  "Aries",
+  "Taurus",
+  "Gemini",
+  "Cancer",
+  "Leo",
+  "Virgo",
+  "Libra",
+  "Scorpio",
+  "Sagittarius",
+  "Capricorn",
+  "Aquarius",
+  "Pisces",
 ];
 
 // Houses meanings
@@ -21,7 +30,7 @@ const HOUSE_MEANINGS = [
   "Higher Learning/Fortune", // 9th house
   "Career/Status", // 10th house
   "Gains/Aspirations", // 11th house
-  "Spirituality/Loss" // 12th house
+  "Spirituality/Loss", // 12th house
 ];
 
 export interface PlanetData {
@@ -40,7 +49,10 @@ export interface AstrologyData {
   planets: PlanetData[];
 }
 
-function getHouseFromDegree(totalDegree: number, ascendantDegree: number): number {
+function getHouseFromDegree(
+  totalDegree: number,
+  ascendantDegree: number
+): number {
   // Calculate house number (1-12) based on degree and ascendant
   const relativeDegree = (totalDegree - ascendantDegree + 360) % 360;
   return Math.floor(relativeDegree / 30) + 1;
@@ -52,27 +64,27 @@ function formatAstrologyData(apiData: any): AstrologyData {
 
   // Format planets data
   const planets = Object.entries(apiData.output[1])
-    .filter(([name]) => !['ayanamsa', 'Ascendant'].includes(name))
+    .filter(([name]) => !["ayanamsa", "Ascendant"].includes(name))
     .map(([name, data]: [string, any]) => ({
       name,
       sign: ZODIAC_SIGNS[data.current_sign - 1],
-      house: getHouseFromDegree(data.fullDegree, ascendantDegree),
+      house: data.current_sign,
       degree: data.normDegree,
-      isRetrograde: data.isRetro === "true"
+      isRetrograde: data.isRetro === "true",
     }));
 
   return {
     ascendant: {
       sign: ZODIAC_SIGNS[ascendantData.current_sign - 1],
-      degree: ascendantData.normDegree
+      degree: ascendantData.normDegree,
     },
-    planets
+    planets,
   };
 }
 
 function formatAstrologyReport(data: AstrologyData): string {
   const { ascendant, planets } = data;
-  
+
   let report = `Birth Chart Analysis:
 
 1. Ascendant (Rising Sign):
@@ -82,29 +94,37 @@ function formatAstrologyReport(data: AstrologyData): string {
 2. Planetary Positions:`;
 
   // Group planets by house for better readability
-  const planetsByHouse = planets.reduce((acc: Record<number, PlanetData[]>, planet) => {
-    if (!acc[planet.house]) {
-      acc[planet.house] = [];
-    }
-    acc[planet.house].push(planet);
-    return acc;
-  }, {});
+  const planetsByHouse = planets.reduce(
+    (acc: Record<number, PlanetData[]>, planet) => {
+      if (!acc[planet.house]) {
+        acc[planet.house] = [];
+      }
+      acc[planet.house].push(planet);
+      return acc;
+    },
+    {}
+  );
 
   // Add house-wise planet positions
   for (let house = 1; house <= 12; house++) {
     const planetsInHouse = planetsByHouse[house] || [];
     if (planetsInHouse.length > 0) {
       report += `\n\n   House ${house} (${HOUSE_MEANINGS[house - 1]}):
-      ${planetsInHouse.map(p => 
-        `${p.name} in ${p.sign} at ${p.degree.toFixed(2)}°${p.isRetrograde ? ' (R)' : ''}`
-      ).join('\n      ')}`;
+      ${planetsInHouse
+        .map(
+          (p) =>
+            `${p.name} in ${p.sign} at ${p.degree.toFixed(2)}°${
+              p.isRetrograde ? " (R)" : ""
+            }`
+        )
+        .join("\n      ")}`;
     }
   }
   // Add retrograde planets section if any
-  const retrogradePlanets = planets.filter(p => p.isRetrograde);
+  const retrogradePlanets = planets.filter((p) => p.isRetrograde);
   if (retrogradePlanets.length > 0) {
     report += "\n\n3. Retrograde Planets:";
-    retrogradePlanets.forEach(planet => {
+    retrogradePlanets.forEach((planet) => {
       report += `\n   ${planet.name} in ${planet.sign}`;
     });
   }
@@ -118,17 +138,19 @@ export async function getAstrologyData(userData: UserFormData): Promise<{
 }> {
   try {
     // Get coordinates and timezone from location
-    const { latitude, longitude, timezone } = await getLocationCoordinates(userData.birthLocation);
-    
+    const { latitude, longitude, timezone } = await getLocationCoordinates(
+      userData.birthLocation
+    );
+
     // Parse birth date and time
     const birthDate = new Date(userData.dateOfBirth);
-    const [hours, minutes] = userData.timeOfBirth.split(':').map(Number);
-    
-    const response = await fetch('https://json.freeastrologyapi.com/planets', {
-      method: 'POST',
+    const [hours, minutes] = userData.timeOfBirth.split(":").map(Number);
+
+    const response = await fetch("https://json.freeastrologyapi.com/planets", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.NEXT_PUBLIC_FREE_ASTROLOGY_API_KEY || '',
+        "Content-Type": "application/json",
+        "x-api-key": process.env.NEXT_PUBLIC_FREE_ASTROLOGY_API_KEY || "",
       },
       body: JSON.stringify({
         year: birthDate.getFullYear(),
@@ -142,26 +164,27 @@ export async function getAstrologyData(userData: UserFormData): Promise<{
         timezone,
         settings: {
           observation_point: "topocentric",
-          ayanamsha: "lahiri"
-        }
+          ayanamsha: "lahiri",
+        },
       }),
     });
 
     const data = await response.json();
-    
+
     if (data.statusCode !== 200) {
-      throw new Error('Failed to fetch astrological data');
+      throw new Error("Failed to fetch astrological data");
     }
-
+    console.log("API Response:", data);
     const formattedData = formatAstrologyData(data);
-    const report = formatAstrologyReport(formattedData);
 
+    const report = formatAstrologyReport(formattedData);
+    console.log('Formatted Report:', report);
     return {
       raw: formattedData,
-      formatted: report
+      formatted: report,
     };
   } catch (error) {
-    console.error('Error fetching astrological data:', error);
+    console.error("Error fetching astrological data:", error);
     throw error;
   }
 }

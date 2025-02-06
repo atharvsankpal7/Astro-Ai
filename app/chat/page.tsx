@@ -38,30 +38,45 @@ const initialSuggestions: Suggestion[] = [
 ];
 
 const RESPONSE_FORMAT = `
-Please analyze the following birth chart and current date/time context to provide astrological insights:
+You are an expert Vedic astrologer with deep knowledge of astrology. Analyze the birth chart and provide insights in a conversational, empathetic manner.
 
-Current Date: ${format(new Date(), 'PPP')}
-Current Time: ${format(new Date(), 'p')}
-Current Location: [User's current location]
+Consider:
+1. The placement of planets in houses and signs
+2. Planetary strengths and weaknesses
+3. House significations and their lords
+4. Current planetary transits and their effects
+5. Remedial measures when appropriate
 
-Birth Details:
-[Name, Gender, Date, Time and Location details will be inserted here]
 
-Astrological Data:
-[Planetary positions and birth chart details will be inserted here]
+
+When responding:
+1. Break down complex concepts into simple language
+2. Use bullet points for clarity
+3. Provide specific, actionable insights
+4. End with encouragement and hope
+5. Suggest 3 natural follow-up questions
+
+
+Remember to:
+- Be empathetic and supportive
+- Avoid technical jargon
+- Try to highlight any danger that they might face or things that user should be catious about
+- Respect cultural sensitivities
+- only 1-3 sentence in such a way that user will want to ask followup question on his own
+- don't use any markdown in the response
 
 Please provide your response in the following format:
 
 Response:
-[sentences directly answering the user's question based on both birth chart and current planetary positions and instead of just directly giving the sentences try to use bulet points to make it easier to understand for the user with giving headings and paragraphs, and don't use any markdown in the response]
+[sentences directly answering the user's question based on both birth chart and current planetary positions and instead of just directly giving the sentences try to use bulet points to make it easier to understand for the user with giving headings and paragraphs, and don't use any markdown in the response, Try to give quantitative data wherever possible, instead of just giving the diplomatic answers try to give numerical data wherever possible, when the optimal answer's date or time has passed then give the answer in the past tense and also try to include the possibility of incidents happening already in the past try to give actual timeframe and numerical data wherever possible]
 
 Follow-up Questions:(this follow up question is for the user to ask more questions based on the answer to you again, so make sure that they are in the format and perspective of the user)
-1. [Related follow-up question]
-2. [Related follow-up question]
-3. [Related follow-up question]
+1. [Natural follow-up question]
+2. [Natural follow-up question]
+3. [Natural follow-up question]
 
 Note: Keep the response concise and focused on the specific question asked while considering both natal and transit influences.
-also make sure that we are using simple language and not using any technical terms or jargon in order to make the response easier to understand for the user as old as 10 year old.
+also make sure that we are using simple language and not using any technical terms or jargon in order to make the response easier to understand for the user as old as 10 year old. make sure your answer will only have 1-3 sentences without any kindof markdown in it.
 `;
 
 export default function ChatPage() {
@@ -110,7 +125,7 @@ export default function ChatPage() {
   const processUserMessage = async (message: string, userData: UserFormData) => {
     setMessages((prev) => [...prev, { role: "user", content: message }]);
     setIsLoading(true);
-
+  
     try {
       // Fetch or use cached astrology data
       let currentAstrologyData = astrologyData;
@@ -118,46 +133,51 @@ export default function ChatPage() {
         currentAstrologyData = await getAstrologyData(userData);
         setAstrologyData(currentAstrologyData);
       }
-
-      const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-
+  
       const prompt = `As a Vedic astrology AI consultant, please analyze the following birth details and current planetary positions:
-
-Birth Details:
-Name: ${userData.name}
-Gender: ${userData.gender}
-Date of Birth: ${format(new Date(userData.dateOfBirth), 'PPP')}
-Time of Birth: ${userData.timeOfBirth}
-Birth Location: ${userData.birthLocation}
-
-Astrological Data:
-${JSON.stringify(currentAstrologyData, null, 2)}
-
-Current Date: ${format(new Date(), 'PPP')}
-Current Time: ${format(new Date(), 'p')}
-
-User's Question: ${message}
-
-${RESPONSE_FORMAT}`;
-
-      const result = await model.generateContent(prompt);
-      const response = result.response;
-      const text = response.text();
-
-      const [answer, ...suggestionsText] = text.split("Follow-up Questions:");
-      
-      const formattedAnswer = answer
-        .replace("Response:", "")
-        .trim();
-      
-      setMessages((prev) => [...prev, { role: "assistant", content: formattedAnswer }]);
-
+  
+  Birth Details:
+  Name: ${userData.name}
+  Gender: ${userData.gender}
+  Date of Birth: ${format(new Date(userData.dateOfBirth), 'PPP')}
+  Time of Birth: ${userData.timeOfBirth}
+  Birth Location: ${userData.birthLocation}
+  
+  current datea: ${new Date().toLocaleDateString()}
+  current time: ${new Date().toLocaleTimeString()}
+  Astrological Data:
+  ${JSON.stringify(currentAstrologyData, null, 2)}
+  
+  User's Question: ${message}
+  
+  ${RESPONSE_FORMAT}`;
+  
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-4o",
+          messages: [{ role: "system", content: "You are a knowledgeable Vedic astrologer AI." }, { role: "user", content: prompt }],
+          temperature: 0.7,
+        }),
+      });
+  
+      const data = await response.json();
+      const text = data.choices?.[0]?.message?.content || "I'm sorry, but I couldn't process the request.";
+  
+      let [answer, ...suggestionsText] = text.split("Follow-up Questions:");
+      answer = answer.replace("Response:", "");
+      answer = answer.replaceAll("*", "");
+      setMessages((prev: any) => [...prev, { role: "assistant", content: answer.trim()}]);
+  
       if (suggestionsText.length > 0) {
         const newSuggestions = suggestionsText[0]
           .split("\n")
-          .filter(line => line.match(/^\d+\./))
-          .map(text => ({
+          .filter((line: string) => line.match(/^\d+\./))
+          .map((text: string) => ({
             text: text.replace(/^\d+\.\s*/, "").trim(),
             category: "followup",
           }));
@@ -176,6 +196,7 @@ ${RESPONSE_FORMAT}`;
       setIsLoading(false);
     }
   };
+  
 
   const handleUserFormSubmit = async (data: UserFormData) => {
     localStorage.setItem("userData", JSON.stringify(data));
@@ -254,7 +275,7 @@ ${RESPONSE_FORMAT}`;
           </div>
 
           <div className="flex-1 flex flex-col">
-            <MessageList messages={messages} />
+            <MessageList messages={messages}  isLoading={isLoading} />
 
             <div className="p-4 border-t space-y-4">
               <SuggestionList 

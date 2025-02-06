@@ -3,11 +3,74 @@ import { Message } from "./types";
 import { ScrollArea } from "../ui/scroll-area";
 import { useEffect, useRef } from "react";
 
+const TypingIndicator = () => {
+  return (
+    <div className="flex items-center space-x-3 p-4">
+      <svg className="w-24 h-8" viewBox="0 0 120 30">
+        <circle cx="15" cy="15" r="4" className="fill-primary">
+          <animate
+            attributeName="opacity"
+            dur="1s"
+            values="0.2;1;0.2"
+            repeatCount="indefinite"
+            begin="0s"
+          />
+          <animate
+            attributeName="cy"
+            dur="1s"
+            values="15;10;15"
+            repeatCount="indefinite"
+            begin="0s"
+            calcMode="spline"
+            keySplines="0.45 0.05 0.55 0.95;0.45 0.05 0.55 0.95"
+          />
+        </circle>
+        <circle cx="40" cy="15" r="4" className="fill-primary">
+          <animate
+            attributeName="opacity"
+            dur="1s"
+            values="0.2;1;0.2"
+            repeatCount="indefinite"
+            begin="0.2s"
+          />
+          <animate
+            attributeName="cy"
+            dur="1s"
+            values="15;10;15"
+            repeatCount="indefinite"
+            begin="0.2s"
+            calcMode="spline"
+            keySplines="0.45 0.05 0.55 0.95;0.45 0.05 0.55 0.95"
+          />
+        </circle>
+        <circle cx="65" cy="15" r="4" className="fill-primary">
+          <animate
+            attributeName="opacity"
+            dur="1s"
+            values="0.2;1;0.2"
+            repeatCount="indefinite"
+            begin="0.4s"
+          />
+          <animate
+            attributeName="cy"
+            dur="1s"
+            values="15;10;15"
+            repeatCount="indefinite"
+            begin="0.4s"
+            calcMode="spline"
+            keySplines="0.45 0.05 0.55 0.95;0.45 0.05 0.55 0.95"
+          />
+        </circle>
+      </svg>
+    </div>
+  );
+};
 interface MessageListProps {
   messages: Message[];
+  isLoading: boolean;
 }
 
-export function MessageList({ messages }: MessageListProps) {
+export function MessageList({ messages, isLoading }: MessageListProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -41,6 +104,7 @@ export function MessageList({ messages }: MessageListProps) {
             </div>
           </motion.div>
         ))}
+        {isLoading && <TypingIndicator />}
         <div ref={messagesEndRef} />
       </div>
     </ScrollArea>
